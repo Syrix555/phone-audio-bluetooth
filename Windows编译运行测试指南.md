@@ -176,6 +176,10 @@ dotnet restore .\PhoneAudioBluetooth.sln
 - 是否使用了正确的项目目录；
 - Windows App SDK 版本对应的包是否能够下载。
 
+项目文件中的 `<EnableMsixTooling>true</EnableMsixTooling>` 是 Windows App SDK 使用
+`dotnet build` 执行 MRT/PRI 资源处理所需的构建配置。它不会改变本项目的非打包配置；
+项目仍然使用 `<WindowsPackageType>None</WindowsPackageType>`。
+
 ### 5.4 生成项目
 
 在 Visual Studio 中选择：
@@ -387,7 +391,36 @@ StartAsync 成功，正在打开音频连接。
 
 不要为了绕过错误直接把目标框架改成 `net8.0`。该项目使用 Windows API，必须保留 Windows 目标框架。
 
-### 9.5 编译时报 Windows App SDK 包还原错误
+### 9.5 编译时报 `ExpandPriContent` 或 `Microsoft.Build.Packaging.Pri.Tasks.dll` 错误
+
+如果错误类似：
+
+```text
+MSB4062: 未能加载任务 Microsoft.Build.Packaging.Pri.Tasks.ExpandPriContent
+```
+
+确认 `src/PhoneAudioBluetooth/PhoneAudioBluetooth.csproj` 中同时存在：
+
+```xml
+<EnableMsixTooling>true</EnableMsixTooling>
+<WindowsPackageType>None</WindowsPackageType>
+```
+
+修改项目文件后，关闭 Visual Studio，再删除项目目录下的 `bin` 和 `obj` 文件夹，
+重新打开解决方案并执行“还原 NuGet 程序包”和“重新生成解决方案”。
+
+也可以在 PowerShell 中执行：
+
+```powershell
+dotnet clean .\src\PhoneAudioBluetooth\PhoneAudioBluetooth.csproj
+dotnet restore .\src\PhoneAudioBluetooth\PhoneAudioBluetooth.csproj
+dotnet build .\src\PhoneAudioBluetooth\PhoneAudioBluetooth.csproj --configuration Debug --runtime win-x64
+```
+
+如果这个错误仍然存在，再使用 Visual Studio 的“开发者 PowerShell”执行同一条
+`dotnet build` 命令，避免普通 PowerShell 使用到不完整的 MSBuild 工具路径。
+
+### 9.6 编译时报 Windows App SDK 包还原错误
 
 检查网络和 NuGet 源，然后重新还原：
 
@@ -402,7 +435,7 @@ dotnet restore .\PhoneAudioBluetooth.sln
 <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250606001" />
 ```
 
-### 9.6 程序启动后立即退出
+### 9.7 程序启动后立即退出
 
 先使用 `F5` 启动并查看 Visual Studio 的“输出”和“调试”窗口。
 
