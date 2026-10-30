@@ -169,7 +169,7 @@ public sealed class AudioPlaybackConnectionService : IAudioPlaybackConnectionSer
         if (_connection is not null)
         {
             _connection.StateChanged -= OnConnectionStateChanged;
-            _connection.Close();
+            // The C# WinRT projection exposes IClosable cleanup through Dispose.
             _connection.Dispose();
         }
 
